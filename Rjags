@@ -1,0 +1,101 @@
+R1 = diagonal matrix 20 x 20
+
+model_code= cat("
+  model{for(t in 2:time){
+    Abundance1[t,1:Nspecies] ~ dmnorm(mu[t,1:Nspecies],Tau[,])
+           for(i in 1:Nspecies) {
+               mu[t,i]=Abundance1[t-1,i]+(r[i]*(1-sum(inprod((alpha[i,]/k[i]),Abundance1[t-1,])))+
+                                      (beta[i,1]*SST[t]*gamma[i,1]+
+                                      beta[i,2]*Chla[t]*gamma[i,2]+
+                                      beta[i,3]*Silicate[t]*gamma[i,3]+
+                                      beta[i,4]*Sal[t]*gamma[i,4]+
+                                      beta[i,5]*Nitrate[t]*gamma[i,5]+
+                                      beta[i,6]*Phosphate[t]*gamma[i,6]))
+
+
+                                      
+            
+    }
+  }
+
+############## PRIOR ELICITATION ####################################### 
+## priors for interaction coefficients ################################ 
+       alpha[Nspecies, Nspecies]<-1
+for(i in 1:(Nspecies-1)){ 
+       alpha[i,i]<-1
+       gam[i,i]<-1
+### gam is the inclusion indicator for SSVS ################################# 
+       for(j in (i+1):Nspecies){  
+       alpha[i,j]~dnorm(0, prec[i,j])
+       alpha[j,i]~dnorm(0, prec[j,i])
+       gam[i,j]~dbern(0.2) 
+       gam[j,i]~dbern(0.2) 
+       prec[i,j]<-1/taw[i,j] 
+       prec[j,i]<-1/taw[j,i] 
+       taw[i,j]<-(1-gam[i,j])*0.001+gam[i,j]*1 
+       taw[j,i]<-(1-gam[j,i])*0.001+gam[j,i]*1 
+          } 
+        }
+ Sigma[1:Nspecies,1:Nspecies]<-inverse(Tau[,])
+  Tau[1 : Nspecies,1 : Nspecies] ~ dwish(Rho[ , ], Nspecies)
+  ### Priors for other variables ########################################## 
+for(i in 1:Nspecies){
+    r[i]~dnorm(0, 1)I(0,)
+    k[i]~dnorm(0, 0.1)I(0,)
+    ## I() is the indicator function ##########################################################################
+    for(j in 1:Nvar){
+      beta[i,j]~dnorm(0, 0.01)
+      gamma[i,j]~dbern(0.5)
+    }
+    
+    
+    ######## Covariance explained by the climatic covariates ############ 
+    ct[i]<-beta[i,1]*beta[i,1]+beta[i,2]*beta[i,2]+ beta[i,3]*beta[i,3]
+    + beta[i,4]*beta[i,4]+ beta[i,5]*beta[i,5]+ beta[i,6]*beta[i,6]
+    
+    
+    env[i]<-ct[i]+Sigma[i,i]
+    intra[i]<-pow((r[i]/k[i]),2)*svar[i]
+    
+    stress1[i]<-(beta[i,1]*beta[i,1])/env[i]
+    stress2[i]<-(beta[i,2]*beta[i,2])/env[i]
+    stress3[i]<-(beta[i,3]*beta[i,3])/env[i]
+    stress4[i]<-(beta[i,4]*beta[i,4])/env[i]
+    stress5[i]<-(beta[i,5]*beta[i,5])/env[i]
+    stress6[i]<-(beta[i,6]*beta[i,6])/env[i]
+    prop.stress[i]<-ct[i]/env[i] # jointly
+  }
+}",file="mamun.txt")
+time1 = 9L
+Nspecies = 20L
+Nvar = 6L
+a1=as.numeric(p2$Abundance)
+Abundance1 =matrix(a1,nrow=9,byrow=TRUE)
+SST = p2$SST
+Chla =p2$Chla
+Sal= p2$Sal
+Nitrate=p2$Nitrate
+Phosphate = p2$Phosphate
+Silicate= p2$Silicate
+svar=c(1.02, 0.82, 0.49, 0.45, 1.16, 0.25, 0.50, 1.35, 0.62, 0.73,0.52,0.39,1.31,0.21,0.52,1.23,0.92,0.75,1.08,0.35)
+
+data_list <- list(
+  time = time1,
+  Rho=R1,
+  Nspecies = Nspecies,
+  Abundance1 =Abundance1,
+  Nvar=Nvar,
+  SST = SST,
+  Chla = Chla,
+  Sal=  Sal,
+  Nitrate = Nitrate ,
+  Phosphate =Phosphate,
+  Silicate= Silicate,
+  svar=svar
+)
+
+params=c("beta","Tau", "alpha","gamma","k", "r","stress1","stress2","stress3","stress4","stress5","stress6","ct",'intra')
+model.loc="mamun.txt"
+
+mod_2<-jags(data_list, parameters.to.save =params, model.file = model.loc, 
+                     n.chains = 3, n.burnin = 200, n.thin = 50, n.iter =1000,DIC = F) 
