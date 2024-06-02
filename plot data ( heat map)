@@ -1,0 +1,50 @@
+df=list()
+for (i in 1:5){
+  data_1=x$BUGSoutput$sims.matrix %>%
+    as_tibble() %>%
+    pivot_longer(cols =everything(),  values_to = "value", names_to = "parameter") %>% 
+    dplyr::group_by(parameter) %>% 
+    dplyr::filter( str_detect(parameter, paste0("stress","[",i,"]"))) %>% 
+    #dplyr::filter(value>=0.01) %>% 
+    dplyr::summarize(mean=mean(value))
+  df[[i]]=data_1
+}
+
+df2 = df %>% reduce(full_join,by=c("parameter","mean"))
+####################Step_2###############
+for (i in 1:5) {
+  for (j in 1:30) {
+    if (i == 1) {
+      df2$parameter[df2$parameter == paste0("stress",i,"[",j,"]")] <- 'Temperature'
+    } else if (i == 2) {
+      df2$parameter[df2$parameter == paste0("stress",i,"[",j,"]")] <- 'Silicate'
+    }
+    else if (i == 3) {
+      df2$parameter[df2$parameter == paste0("stress",i,"[",j,"]")] <- 'Salinity'
+    }
+    else if (i == 4) {
+      df2$parameter[df2$parameter == paste0("stress",i,"[",j,"]")] <- 'Nitrate'
+    }
+    else if (i == 5) {
+      df2$parameter[df2$parameter == paste0("stress",i,"[",j,"]")] <- 'Phosphate'
+    }
+  }
+}
+
+df2 %>% 
+  mutate(where(is.numeric),~round(.,3)) %>% 
+  mutate(species = rep(unique(p2$Species),5)) %>% 
+  #arrange(-`mean`) %>% 
+  ggplot(aes(x = fct_inorder(parameter), y = fct_inorder(species),fill= mean)) +
+  geom_raster()+ 
+  scale_fill_gradientn(colours=c("#0000FFFF","#FFFFFFFF","#FF0000FF"))+
+  #scale_fill_gradient2(low=muted('red'), mid='white', high=muted('blue'))+
+  labs(x="Variable",y="Species")+
+  theme_classic2()+
+  #guides(show.legend = FALSE) +
+  theme(axis.text.x = element_text(angle =90,hjust =1,vjust=0.6,color = "black",size = 14,face ="plain"))+
+  theme(axis.text.y = element_text(colour = "black",face ="italic",size = 14,vjust =0.5,hjust =1))+
+  #scale_y_continuous(breaks = seq(0.01,35,by=8))+
+  theme(axis.text=element_text(size=12),axis.title=element_text(size=14,face="bold",color = "black"),
+        legend.title = element_text(face = "plain", size = 14),
+        legend.text = element_text(color = "black", size = 14))
