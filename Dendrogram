@@ -1,0 +1,47 @@
+df = read.csv('E:/Model for Paper/gamma_1.csv')
+k=matrix(df$mean,nrow=30,byrow=TRUE)
+
+colnames(k)=c('Temperature','Salinity','Silicate','Nitrate','Phosphate')
+new_colnames <- as.character(p2$Species[1:30])
+rownames(k) <- new_colnames
+df1=as.data.frame(k)
+sample_names <- colnames(df1)
+# Obtain the dendrogram
+dend <- as.dendrogram(hclust(dist(df1)))
+ddata <- dendro_data(dend)
+
+ggplot(segment(ddata)) +
+  geom_segment(aes(x = x, y = y, xend = xend, yend = yend)) +
+  coord_flip() +
+  scale_y_reverse(expand = c(0.2, 0)) +
+  theme_dendro()
+
+plt_hmap <- df %>% 
+  ggplot(aes(x = fct_inorder(parameter), y = fct_inorder(Species),fill=mean)) +
+  geom_tile()+
+  #scale_fill_manual(values = c("0" = "white", "1" = "black"))+
+  #scale_fill_gradientn(colours = mycol)+
+  #scale_fill_gradient2(low="navy", mid="white", high="red")+
+  scale_fill_gradientn(colours=c("white","black"))+
+  #scale_fill_gradient2(low=muted('blue'), mid='white', high=muted('red'))+
+  labs(x="Variable",y="Species")+theme_classic2()+
+  theme(axis.text.x = element_text(angle =90,hjust =1,vjust=0.6,color = "black",size = 14,face ="plain"))+
+  theme(axis.text.y = element_text(colour = "black",face ="italic",size = 14,vjust =0.5,hjust =1))+
+  #scale_y_continuous(breaks = seq(0.01,35,by=8))+
+  theme(axis.text=element_text(size=12),axis.title=element_text(size=14,face="bold",color = "black"),
+        legend.title = element_text(face = "plain", size = 14),
+        legend.text = element_text(color = "black", size = 14))+scale_y_discrete(position = 'right')
+
+# Dendrogram plot
+plt_dendr <- ggplot(segment_data) + 
+  geom_segment(aes(x = x, y = y, xend = xend, yend = yend)) + 
+  scale_x_reverse(expand = c(0, 0.2)) + 
+  scale_y_continuous(breaks = gene_pos_table$y_center, 
+                     labels = gene_pos_table$gene, 
+                     limits = gene_axis_limits, 
+                     expand = c(0, 0)) + 
+  labs(x = "Distance", y = "", colour = "", size = " ") +
+  theme_bw() + 
+  theme(panel.grid.minor = element_blank())
+
+plot_grid(plt_dendr, plt_hmap, align = 'h', rel_widths = c(1, 1))
