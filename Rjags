@@ -1,3 +1,4 @@
+install packages('rjags')
 R1 = diagonal matrix 20 x 20
 
 model_code= cat("
