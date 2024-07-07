@@ -48,23 +48,7 @@ for(i in 1:Nspecies){
       beta[i,j]~dnorm(0, 0.01)
       gamma[i,j]~dbern(0.5)
     }
-    
-    
-    ######## Covariance explained by the climatic covariates ############ 
-    ct[i]<-beta[i,1]*beta[i,1]+beta[i,2]*beta[i,2]+ beta[i,3]*beta[i,3]
-    + beta[i,4]*beta[i,4]+ beta[i,5]*beta[i,5]+ beta[i,6]*beta[i,6]
-    
-    
-    env[i]<-ct[i]+Sigma[i,i]
-    intra[i]<-pow((r[i]/k[i]),2)*svar[i]
-    
-    stress1[i]<-(beta[i,1]*beta[i,1])/env[i]
-    stress2[i]<-(beta[i,2]*beta[i,2])/env[i]
-    stress3[i]<-(beta[i,3]*beta[i,3])/env[i]
-    stress4[i]<-(beta[i,4]*beta[i,4])/env[i]
-    stress5[i]<-(beta[i,5]*beta[i,5])/env[i]
-    stress6[i]<-(beta[i,6]*beta[i,6])/env[i]
-    prop.stress[i]<-ct[i]/env[i] # jointly
+
   }
 }",file="mamun.txt")
 time1 = 9L
