@@ -1,7 +1,6 @@
 getwd()
 setwd("E:/Model for Paper")
 x=readRDS("model_g_5.RDS",file = "E:/My Reserach Project/model_4.rda")
-update(x3,10000)
 r=read.csv("E:/My Reserach Project/r.csv")
 v2=round(matrix(x3$BUGSoutput$mean$gamma, byrow = TRUE, ncol = 20) ,6)
 v3=as.data.frame(v2)
